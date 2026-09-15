@@ -30,23 +30,36 @@
   <link rel="stylesheet" href="css/styles.css">
 </head>
 <body class="bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 font-sans min-h-screen overflow-x-hidden">
+
+  <!-- Gym Women Theme Background -->
+  <div class="gym-theme-bg"></div>
+
   <!-- Signature fixed bottom-left -->
   <div id="app-signature" class="fixed bottom-3 left-3 z-50 opacity-70 hover:opacity-100 transition-opacity cursor-default select-none" title="AM - نظام إدارة النادي">
     <svg width="36" height="36" viewBox="0 0 100 100" class="signature-svg">
-      <!-- Intertwined A and M professional monogram -->
       <defs>
         <linearGradient id="sigGrad" x1="0%" y1="0%" x2="100%" y2="100%">
           <stop offset="0%" stop-color="var(--sig-color1)" />
           <stop offset="100%" stop-color="var(--sig-color2)" />
         </linearGradient>
       </defs>
-      <!-- Outer circle subtle -->
+
       <circle cx="50" cy="50" r="46" fill="none" stroke="url(#sigGrad)" stroke-width="2.5" opacity="0.4"/>
-      <!-- Letter A (left part) -->
-      <path d="M28 78 L42 22 L56 78 M34 58 L50 58" fill="none" stroke="url(#sigGrad)" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"/>
-      <!-- Letter M overlapping/intertwined -->
-      <path d="M48 78 L48 28 L62 55 L76 28 L76 78" fill="none" stroke="url(#sigGrad)" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"/>
-      <!-- Small center accent -->
+
+      <path d="M28 78 L42 22 L56 78 M34 58 L50 58"
+            fill="none"
+            stroke="url(#sigGrad)"
+            stroke-width="5.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"/>
+
+      <path d="M48 78 L48 28 L62 55 L76 28 L76 78"
+            fill="none"
+            stroke="url(#sigGrad)"
+            stroke-width="5.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"/>
+
       <circle cx="50" cy="50" r="3.5" fill="url(#sigGrad)"/>
     </svg>
   </div>

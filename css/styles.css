@@ -373,3 +373,102 @@ html {
   .print-area, .print-area * { visibility: visible; }
   .print-area { position: absolute; left: 0; top: 0; width: 100%; }
 }
+/* =====================================================
+   WOMEN FITNESS CLUB THEME
+===================================================== */
+
+.gym-theme-bg{
+    position: fixed;
+    inset: 0;
+
+    z-index: -1;
+
+    pointer-events: none;
+
+    background:
+        radial-gradient(
+            circle at top right,
+            rgba(13,148,136,.08),
+            transparent 28%
+        ),
+        radial-gradient(
+            circle at bottom left,
+            rgba(20,184,166,.09),
+            transparent 35%
+        ),
+        radial-gradient(
+            circle at center,
+            rgba(13,148,136,.03),
+            transparent 60%
+        );
+
+    overflow: hidden;
+}
+
+/* أوراق يسار */
+
+.gym-theme-bg::before{
+    content:"";
+
+    position:absolute;
+
+    width:420px;
+    height:420px;
+
+    left:-80px;
+    bottom:-80px;
+
+    background:
+        radial-gradient(circle,#0f766e22 0%,transparent 65%),
+        radial-gradient(circle,#14b8a622 0%,transparent 70%);
+
+    border-radius:50%;
+
+    filter:blur(25px);
+}
+
+/* أوراق يمين */
+
+.gym-theme-bg::after{
+    content:"";
+
+    position:absolute;
+
+    width:380px;
+    height:380px;
+
+    right:-60px;
+    top:40px;
+
+    background:
+        radial-gradient(circle,#0f766e18 0%,transparent 65%);
+
+    border-radius:50%;
+
+    filter:blur(30px);
+}
+
+/* كروت النظام */
+
+.stat-card,
+.table-container,
+.modal-content{
+    backdrop-filter: blur(12px);
+
+    background: rgba(255,255,255,.90);
+}
+
+/* الوضع الداكن */
+
+.dark .stat-card,
+.dark .table-container,
+.dark .modal-content{
+    background: rgba(30,41,59,.88);
+}
+
+/* محتوى التطبيق */
+
+#app{
+    position:relative;
+    z-index:2;
+}

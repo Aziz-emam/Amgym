@@ -8,6 +8,7 @@ const defaultData = {
     loginBg: null,
     homeBg: null,
     theme: 'teal', // teal | rose | purple | blue
+    bgTheme: 'weights', // weights | cardio | yoga | geometric | minimal
     darkMode: false,
     whatsappMessages: {
       newMember: `مرحباً أستاذة {name}

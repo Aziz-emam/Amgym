@@ -130,8 +130,9 @@ function renderMembers() {
           <h2 class="text-2xl font-bold">المشتركات</h2>
           <p class="text-slate-500 text-sm">${members.length} مشتركة</p>
         </div>
-        <div class="flex gap-2">
+        <div class="flex gap-2 flex-wrap">
           <input type="search" id="member-search" placeholder="بحث بالاسم أو الجوال أو الرقم..." class="form-input max-w-xs" oninput="filterMembers(this.value)">
+          <button type="button" onclick="exportMembersExcel()" class="btn-secondary whitespace-nowrap">تصدير Excel</button>
           <button onclick="openAddMember()" class="btn-primary whitespace-nowrap">
             + مشتركة جديدة
           </button>
@@ -344,12 +345,15 @@ function renderEmployees() {
   const data = getData();
   return `
     <div class="space-y-5">
-      <div class="flex items-center justify-between">
+      <div class="flex items-center justify-between gap-2 flex-wrap">
         <div>
           <h2 class="text-2xl font-bold">الموظفات والمدربات</h2>
           <p class="text-slate-500 text-sm">${data.employees.length} موظفة</p>
         </div>
-        <button onclick="openAddEmployee()" class="btn-primary">+ موظفة جديدة</button>
+        <div class="flex gap-2">
+          <button type="button" onclick="exportEmployeesExcel()" class="btn-secondary">تصدير Excel</button>
+          <button onclick="openAddEmployee()" class="btn-primary">+ موظفة جديدة</button>
+        </div>
       </div>
       <div class="table-container bg-white dark:bg-slate-800">
         <table>
@@ -509,6 +513,7 @@ function renderReports() {
           <div class="form-group">
             <label class="form-label">نوع التقرير</label>
             <select id="report-type" class="form-input">
+              <option value="profit">صافي الربح (إيرادات − مصروفات)</option>
               <option value="payments">الاشتراكات والتجديدات</option>
               <option value="attendance">الحضور</option>
               <option value="expenses">المصروفات</option>
@@ -616,6 +621,29 @@ function renderSettings() {
           <label class="form-label mb-0">الوضع الداكن</label>
           <button onclick="toggleDark()" class="btn-secondary text-sm">${s.darkMode ? 'إيقاف' : 'تفعيل'}</button>
         </div>
+        <div class="mt-4">
+          <label class="form-label">شكل خلفية الواجهة</label>
+          <p class="text-xs text-slate-500 mb-2">الأشكال تتلوّن تلقائياً مع اللون الأساسي والوضع الفاتح/الداكن</p>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            ${[
+              { id: 'weights', name: 'أوزان', desc: 'دمبل وبار وأقراص' },
+              { id: 'cardio', name: 'كارديو', desc: 'حلقات ومسارات حركة' },
+              { id: 'yoga', name: 'هدوء / يوغا', desc: 'منحنيات ودوائر ناعمة' },
+              { id: 'geometric', name: 'هندسي رياضي', desc: 'أجهزة وخطوط هندسية' },
+              { id: 'minimal', name: 'بسيط', desc: 'حلقات خفيفة في الزوايا فقط' }
+            ].map(t => `
+              <button type="button" onclick="setBgTheme('${t.id}')"
+                class="text-right px-3 py-2.5 rounded-xl border transition ${
+                  (s.bgTheme || 'weights') === t.id
+                    ? 'border-teal-500 bg-teal-50 dark:bg-teal-900/30 ring-1 ring-teal-400'
+                    : 'border-slate-200 dark:border-slate-600 hover:border-teal-300'
+                }">
+                <span class="font-medium block">${t.name}</span>
+                <span class="text-xs text-slate-500">${t.desc}</span>
+              </button>
+            `).join('')}
+          </div>
+        </div>
       </div>
 
       <div class="stat-card space-y-4">
@@ -630,6 +658,25 @@ function renderSettings() {
           <textarea id="msg-renew" class="form-input" rows="3">${s.whatsappMessages.renew}</textarea>
         </div>
         <button onclick="saveMessages()" class="btn-primary">حفظ الرسائل</button>
+      </div>
+
+      <div class="stat-card space-y-4">
+        <h3 class="font-bold">الترخيص</h3>
+        ${(() => {
+          const lic = getLicenseStatus();
+          if (lic.status === 'active') {
+            return `
+              <div class="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 text-sm">
+                <p class="font-medium text-emerald-700 dark:text-emerald-300">الترخيص ساري ✓</p>
+                <p class="text-slate-600 dark:text-slate-300 mt-1">ينتهي في: <strong>${lic.endDate}</strong></p>
+                <p class="text-slate-500">متبقي تقريباً: <strong>${lic.daysLeft}</strong> يوم</p>
+                <p class="text-xs text-slate-400 mt-2 font-mono dir-ltr">${lic.serial || ''}</p>
+              </div>
+              <button type="button" onclick="openRenewLicenseBox()" class="btn-secondary text-sm">إدخال سيريال تجديد</button>
+            `;
+          }
+          return `<p class="text-sm text-rose-600">لا يوجد ترخيص ساري</p>`;
+        })()}
       </div>
 
       <div class="stat-card space-y-4">

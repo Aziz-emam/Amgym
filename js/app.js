@@ -3,11 +3,16 @@
 let currentPage = 'dashboard';
 
 function navigate(page) {
+  if (typeof isAppRestricted === 'function' && isAppRestricted()) {
+    if (typeof isPageAllowedWithoutLicense === 'function' && !isPageAllowedWithoutLicense(page)) {
+      showToast('غير متاح بدون ترخيص ساري. المتاح: المشتركات، الموظفات، التقارير، الإعدادات', 'error');
+      page = 'members';
+    }
+  }
   currentPage = page;
   document.querySelectorAll('.nav-item').forEach(el => {
     el.classList.toggle('active', el.dataset.page === page);
   });
-  // close sidebar on mobile
   document.getElementById('sidebar').classList.remove('open');
   document.getElementById('sidebar-overlay').classList.add('hidden');
 
@@ -31,6 +36,7 @@ function navigate(page) {
 
 // ===== Members =====
 function openAddMember() {
+  if (typeof guardFullFeature === 'function' && !guardFullFeature()) return;
   const { el, close } = openModal(renderMemberForm(null));
   bindMemberFormLogic(el, null, (payload) => {
     const data = getData();
@@ -750,7 +756,34 @@ function generateCustomReport() {
   const data = getData();
   let html = '';
 
-  if (type === 'payments') {
+  if (type === 'profit') {
+    const pays = data.payments.filter(p => p.date >= from && p.date <= to);
+    const exps = data.expenses.filter(e => e.date >= from && e.date <= to);
+    const income = pays.reduce((s, p) => s + (p.amount || 0), 0);
+    const expense = exps.reduce((s, e) => s + (e.amount || 0), 0);
+    const net = income - expense;
+    const cash = pays.filter(p => p.method === 'cash').reduce((s, p) => s + p.amount, 0);
+    const transfer = pays.filter(p => p.method === 'transfer').reduce((s, p) => s + p.amount, 0);
+    html = `
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+        <div class="p-4 rounded-xl bg-teal-50 dark:bg-teal-900/20">
+          <p class="text-sm text-slate-500">إجمالي الإيرادات</p>
+          <p class="text-xl font-bold text-teal-700 dark:text-teal-300">${formatMoney(income)}</p>
+          <p class="text-xs mt-1">نقدي: ${formatMoney(cash)} · تحويل: ${formatMoney(transfer)}</p>
+        </div>
+        <div class="p-4 rounded-xl bg-rose-50 dark:bg-rose-900/20">
+          <p class="text-sm text-slate-500">إجمالي المصروفات</p>
+          <p class="text-xl font-bold text-rose-700 dark:text-rose-300">${formatMoney(expense)}</p>
+        </div>
+        <div class="p-4 rounded-xl ${net >= 0 ? 'bg-emerald-50 dark:bg-emerald-900/20' : 'bg-amber-50 dark:bg-amber-900/20'}">
+          <p class="text-sm text-slate-500">صافي الربح</p>
+          <p class="text-xl font-bold">${formatMoney(net)}</p>
+          <p class="text-xs mt-1">إيرادات − مصروفات للفترة</p>
+        </div>
+      </div>
+      <p class="text-sm text-slate-500">الفترة: ${formatDate(from)} → ${formatDate(to)} · عمليات إيراد: ${pays.length} · مصروفات: ${exps.length}</p>
+    `;
+  } else if (type === 'payments') {
     const list = data.payments.filter(p => p.date >= from && p.date <= to);
     const total = list.reduce((s, p) => s + p.amount, 0);
     html = `<p class="mb-3 font-medium">عدد العمليات: ${list.length} • الإجمالي: ${formatMoney(total)}</p>
@@ -867,6 +900,13 @@ function setTheme(theme) {
   showToast('تم تغيير الثيم');
 }
 
+function setBgTheme(bgTheme) {
+  updateData(d => { d.settings.bgTheme = bgTheme; return d; });
+  applyTheme();
+  showToast('تم تغيير شكل الخلفية');
+  if (currentPage === 'settings') navigate('settings');
+}
+
 function applyCustomColor(hex) {
   if (!hex) return;
   const root = document.documentElement;
@@ -900,9 +940,45 @@ function saveMessages() {
   showToast('تم حفظ الرسائل');
 }
 
-// ===== Init =====
-document.addEventListener('DOMContentLoaded', () => {
-  applyTheme();
+function openRenewLicenseBox() {
+  openModal(`
+    <div class="p-6">
+      <h3 class="text-xl font-bold mb-2">تجديد الترخيص</h3>
+      <p class="text-sm text-slate-500 mb-4">أدخلي السيريال الجديد بعد سداد التجديد</p>
+      <input type="text" id="renew-serial-input" dir="ltr" class="form-input font-mono text-center mb-3" placeholder="AM-YYYYMMDD-TAG-XXXXXX">
+      <p id="renew-serial-err" class="text-rose-600 text-sm mb-3 hidden"></p>
+      <div class="flex gap-2">
+        <button type="button" id="renew-serial-btn" class="btn-primary flex-1 justify-center">تفعيل</button>
+        <button type="button" data-close class="btn-secondary">إلغاء</button>
+      </div>
+    </div>
+  `);
+  document.getElementById('renew-serial-btn').onclick = () => {
+    const val = document.getElementById('renew-serial-input')?.value || '';
+    const result = activateLicense(val);
+    const err = document.getElementById('renew-serial-err');
+    if (!result.ok) {
+      if (err) {
+        err.textContent = result.reason || 'فشل';
+        err.classList.remove('hidden');
+      }
+      return;
+    }
+    document.querySelector('.modal-overlay')?.remove();
+    showToast(`تم التجديد — ساري حتى ${result.endDate}`);
+    navigate('settings');
+  };
+}
+
+let appBootstrapped = false;
+
+function bootstrapApp() {
+  if (appBootstrapped) {
+    if (typeof updateLicenseBanner === 'function') updateLicenseBanner();
+    navigate(isAppRestricted && isAppRestricted() ? 'members' : 'dashboard');
+    return;
+  }
+  appBootstrapped = true;
 
   // Sidebar toggle
   document.getElementById('menu-btn')?.addEventListener('click', () => {
@@ -932,5 +1008,18 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  navigate('dashboard');
+  if (typeof updateLicenseBanner === 'function') updateLicenseBanner();
+  navigate(typeof isAppRestricted === 'function' && isAppRestricted() ? 'members' : 'dashboard');
+}
+
+// ===== Init =====
+document.addEventListener('DOMContentLoaded', () => {
+  applyTheme();
+
+  // فحص الترخيص قبل تشغيل التطبيق
+  if (!ensureLicenseOrGate()) {
+    return; // شاشة التفعيل ظاهرة — بعد النجاح تستدعي bootstrapApp
+  }
+
+  bootstrapApp();
 });

@@ -228,6 +228,7 @@ function applyTheme() {
     root.classList.remove('dark');
   }
   root.setAttribute('data-theme', data.settings.theme || 'teal');
+  root.setAttribute('data-bg-theme', data.settings.bgTheme || 'weights');
   if (data.settings.primaryColor) {
     root.style.setProperty('--color-primary', data.settings.primaryColor);
     root.style.setProperty('--color-primary-dark', data.settings.primaryColor);
@@ -269,4 +270,57 @@ function avatar(name, photo, size = 'w-10 h-10') {
   }
   const initial = (name || '?')[0];
   return `<div class="${size} rounded-full bg-gradient-to-br from-teal-400 to-teal-600 flex items-center justify-center text-white font-bold shadow">${initial}</div>`;
+}
+
+/** تصدير CSV يفتح في Excel مع دعم العربي */
+function exportToExcelCSV(filename, headers, rows) {
+  const escapeCell = (v) => {
+    const s = v == null ? '' : String(v);
+    if (/[",\n\r]/.test(s)) return '"' + s.replace(/"/g, '""') + '"';
+    return s;
+  };
+  const lines = [headers.map(escapeCell).join(',')];
+  rows.forEach(r => lines.push(r.map(escapeCell).join(',')));
+  const bom = '\uFEFF';
+  const blob = new Blob([bom + lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename.endsWith('.csv') ? filename : filename + '.csv';
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
+  if (typeof showToast === 'function') showToast('تم تنزيل الملف — افتحيه من Excel');
+}
+
+function exportMembersExcel() {
+  const data = getData();
+  const headers = [
+    'رقم العضوية', 'الاسم', 'الجوال', 'العمر', 'العنوان',
+    'نوع الاشتراك', 'المدة', 'تاريخ البداية', 'تاريخ الانتهاء',
+    'عدد الزيارات', 'آخر زيارة', 'الحالة', 'أيام التجاوز', 'ملاحظات'
+  ];
+  const rows = data.members.map(m => {
+    const grace = calcGraceDays(m, data.attendance);
+    const st = getMemberStatus({ ...m, graceDays: grace });
+    const stMap = { active: 'سارية', soon: 'قريبة الانتهاء', expired: 'منتهية', grace: 'تجاوز' };
+    return [
+      m.id, m.name, m.phone, m.age || '', m.address || '',
+      m.subTypeName || '', m.durationName || '', m.startDate || '', m.endDate || '',
+      m.visitCount || 0, m.lastVisit || '', stMap[st] || st, grace, m.notes || ''
+    ];
+  });
+  exportToExcelCSV(`مشتركات-${todayStr()}.csv`, headers, rows);
+}
+
+function exportEmployeesExcel() {
+  const data = getData();
+  const headers = [
+    'المعرّف', 'الاسم', 'الجوال', 'رقم الهوية', 'تاريخ التوظيف',
+    'الراتب الأساسي', 'آخر راتب', 'ملاحظات'
+  ];
+  const rows = data.employees.map(e => [
+    e.id, e.name, e.phone || '', e.nationalId || '', e.hireDate || '',
+    e.baseSalary || 0, e.lastSalaryDate || '', e.notes || ''
+  ]);
+  exportToExcelCSV(`موظفات-${todayStr()}.csv`, headers, rows);
 }
